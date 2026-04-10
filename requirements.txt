@@ -1,0 +1,33 @@
+# DÉPENDANCES STT PIPELINE
+# Installer avec : pip install -r requirements.txt
+
+# Core ML
+torch>=2.0.0
+torchaudio>=2.0.0
+torchvision>=0.15.0
+
+# Données
+datasets>=2.14.0
+huggingface_hub>=0.16.0
+
+# Audio
+soundfile>=0.12.0
+librosa>=0.10.0
+numpy>=1.24.0
+
+# Tokenizer
+sentencepiece>=0.1.99
+
+# Métriques
+jiwer>=3.0.0
+
+# Visualisation
+matplotlib>=3.7.0
+seaborn>=0.12.0
+pandas>=2.0.0
+
+# Monitoring
+tensorboard>=2.13.0
+
+# Utilitaires
+tqdm>=4.65.0
