@@ -211,5 +211,5 @@ __marimo__/
 *.out
 *.toc
 *.tex
-./logs/tensorboard
+logs/tensorboard/*
 
