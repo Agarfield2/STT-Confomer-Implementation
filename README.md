@@ -53,7 +53,7 @@ huggingface-cli login
 
 ### ÉTAPE 1 - Téléchargement du dataset (~20 GB, ~30-60 min)
 ```bash
-python scripts/01_download_dataset.py
+python scripts/download_dataset.py
 ```
 **Ce qui se passe :**
 - Télécharge Common Voice 17.0 FR depuis Hugging Face
@@ -74,7 +74,7 @@ python scripts/01_download_dataset.py
 
 ### ÉTAPE 2a - Tokenizer BPE (~5 min)
 ```bash
-python scripts/02a_train_tokenizer.py
+python scripts/train_tokenizer.py
 ```
 **Ce qui se passe :**
 - Extrait tout le texte des transcriptions
@@ -91,7 +91,7 @@ python scripts/02a_train_tokenizer.py
 
 ### ÉTAPE 2b - Entraînement du modèle (3-5 jours sur RTX 3080)
 ```bash
-python scripts/02b_train_model.py
+python scripts/train_model.py
 ```
 **Architecture :**
 ```
@@ -116,14 +116,14 @@ watch -n 2 nvidia-smi
 **Reprendre un entraînement interrompu :**
 ```bash
 # Le script reprend automatiquement depuis le dernier checkpoint
-python scripts/02b_train_model.py
+python scripts/train_model.py
 ```
 
 ---
 
 ### ÉTAPE 3 - Évaluation WER (~15 min)
 ```bash
-python scripts/03_evaluate_wer.py
+python scripts/evaluate_wer.py
 ```
 **Ce qui se passe :**
 - Charge le meilleur modèle sauvegardé
@@ -164,7 +164,7 @@ evaluation/
 
 Si tu manques de VRAM :
 ```python
-# Dans Config() de 02b_train_model.py :
+# Dans Config() de train_model.py :
 cfg.d_model           = 128   # Réduire de 256 à 128
 cfg.num_encoder_layers = 4    # Réduire de 6 à 4
 cfg.batch_size        = 4     # Réduire de 8 à 4
