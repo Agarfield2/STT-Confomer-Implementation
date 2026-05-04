@@ -12,6 +12,7 @@ stt_project/
 │   ├── train_tokenizer.py    ← Tokenizer BPE (à faire avant l'entraînement)
 │   ├── train.py        ← Architecture + boucle d'entraînement
 │   └── evaluate_wer.py        ← Évaluation WER FR vs QC
+│   └── video_to_subtitles.py        ← Pipline complet pour des vidéos
 ├── data/
 │   ├── common_voice_fr/          ← Audios WAV 16kHz (auto-créé)
 │   ├── manifests/                ← Fichiers JSON manifest (auto-créé)
@@ -159,29 +160,15 @@ evaluation/
 | 50%+ (données QC ajoutées) | ~15-18% | ~15-20% |
 
 ---
+## Pipeline complet : vidéo -> vidéo sous-titrée
 
-## Améliorer le québécois
-
-### Option A - Données supplémentaires QC
-```bash
-# Sources recommandées :
-# 1. Radio-Canada Baladodiffusion (https://ici.radio-canada.ca/ohdio/balados)
-# 2. ONF (https://www.onf.ca) - films documentaires avec sous-titres
-# 3. LÉXI-C (corpus universitaire québécois)
-# 4. Common Voice contribution QC (contribuer vous-même !)
-```
-
-### Option B - Fine-tuning ciblé (après l'entraînement principal)
-```python
-# Dans 02b_train_model.py, changer :
-cfg.train_manifest = "./data/manifests/train_qc_only.json"
-cfg.max_epochs     = 5
-cfg.learning_rate  = 1e-5   # LR plus faible pour fine-tune
-```
-
+#### Usage :
+  python video_to_subtitles.py --video ma_video.mp4 --model models/best_model.pt
+  python video_to_subtitles.py --video ma_video.mp4 --model models/best_model.pt --beam 3
+  python video_to_subtitles.py --video ma_video.mp4 --model models/best_model.pt --srt_only
 ---
 
-## Ajustements pour RTX 3080
+## Suivant la carte graphique :
 
 Si tu manques de VRAM :
 ```python
@@ -209,14 +196,3 @@ python -c "import torch; torch.cuda.empty_cache()"
 # Puis réduire batch_size dans la config
 ```
 
-**Erreur Hugging Face login**
-```bash
-huggingface-cli login --token hf_VOTRE_TOKEN
-```
-
-**WER qui n'améliore pas après époque 20**
-```
-→ Réduire le learning rate : cfg.learning_rate = 1e-4
-→ Augmenter le dropout : cfg.dropout = 0.2
-→ Vérifier que SpecAugment est bien activé
-```
