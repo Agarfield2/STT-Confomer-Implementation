@@ -14,7 +14,7 @@ TOKENIZER_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def extract_text_corpus():
-    """Extrait tout le texte du manifest pour entraîner le tokenizer."""
+    
     print("Extraction du corpus texte...")
 
     all_texts = []
@@ -39,7 +39,7 @@ def extract_text_corpus():
 
 
 def train_tokenizer():
-    """Entraîne le tokenizer SentencePiece BPE."""
+    
     print(f"\n Entraînement tokenizer BPE (vocab={VOCAB_SIZE})...")
 
     model_prefix = str(TOKENIZER_DIR / "tokenizer_fr")
@@ -69,7 +69,7 @@ def train_tokenizer():
 
 
 def test_tokenizer(model_path):
-    """Teste le tokenizer sur quelques exemples FR."""
+    
     sp = spm.SentencePieceProcessor()
     sp.load(model_path)
 

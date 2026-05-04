@@ -32,19 +32,7 @@ class ModelConfig:
 # BRIQUE 1 - POSITIONAL ENCODING
 
 class PositionalEncoding(nn.Module):
-    """
-    Encodage positionnel sinusoïdal.
-
-    Le Transformer n'a pas de notion d'ordre - toutes les positions
-    sont traitées en parallèle. On ajoute donc un vecteur unique
-    par position, calculé avec des sinus/cosinus à différentes fréquences.
-
-    sin(pos / 10000^(2i/d)) pour les dimensions paires
-    cos(pos / 10000^(2i/d)) pour les dimensions impaires
-
-    Résultat : deux positions proches ont des encodages similaires,
-    deux positions éloignées ont des encodages très différents.
-    """
+    
     def __init__(self, d_model: int, max_len: int = 5000, dropout: float = 0.1):
         super().__init__()
         self.dropout = nn.Dropout(dropout)
@@ -73,19 +61,7 @@ class PositionalEncoding(nn.Module):
 # BRIQUE 2 - FEED FORWARD NETWORK
 
 class FeedForward(nn.Module):
-    """
-    Réseau feed-forward appliqué position par position.
-
-    Chaque token passe indépendamment dans :
-      Linear(d_model → d_ff) → GELU → Dropout → Linear(d_ff → d_model)
-
-    Le d_ff est typiquement 4× d_model - c'est une expansion puis
-    une compression. C'est ici que le modèle stocke ses "connaissances"
-    sur les patterns qu'il a appris.
-
-    GELU (Gaussian Error Linear Unit) remplace ReLU dans les Transformers
-    modernes - transition plus douce autour de 0.
-    """
+    
     def __init__(self, d_model: int, d_ff: int, dropout: float = 0.1):
         super().__init__()
         self.linear1 = nn.Linear(d_model, d_ff)
@@ -105,23 +81,7 @@ class FeedForward(nn.Module):
 # BRIQUE 3 - COUCHE ENCODEUR
 
 class EncoderLayer(nn.Module):
-    """
-    Une couche d'encodeur = Self-Attention + Feed Forward.
-
-    Self-Attention : chaque frame audio regarde toutes les autres frames
-    pour comprendre le contexte - "ce son ressemble à un 'b' surtout
-    parce qu'il est suivi d'une voyelle".
-
-    Architecture Pre-LN (Layer Norm avant l'attention) :
-    Plus stable à l'entraînement que Post-LN.
-
-    x → LayerNorm → SelfAttention → + x (résidu)
-      → LayerNorm → FeedForward   → + x (résidu)
-
-    La connexion résiduelle (+ x) permet aux gradients de circuler
-    directement sans traverser les couches - essentiel pour entraîner
-    des réseaux profonds.
-    """
+    
     def __init__(self, d_model: int, n_heads: int, d_ff: int, dropout: float = 0.1):
         super().__init__()
         self.norm1 = nn.LayerNorm(d_model)
@@ -163,22 +123,7 @@ class EncoderLayer(nn.Module):
 # BRIQUE 4 - COUCHE DÉCODEUR
 
 class DecoderLayer(nn.Module):
-    """
-    Une couche de décodeur = Masked Self-Attention + Cross-Attention + FF.
-
-    Masked Self-Attention : le token à la position U ne peut voir
-    que les tokens 0..U-1, jamais le futur. Sinon le modèle
-    "tricherait" pendant l'entraînement en lisant la réponse.
-    Le masque causal est un masque triangulaire supérieur.
-
-    Cross-Attention : les tokens décodés "écoutent" la sortie
-    de l'encodeur. C'est ici que le lien audio ↔ texte se crée.
-    Query = tokens décodés, Key/Value = sortie encodeur.
-
-    x → LayerNorm → MaskedSelfAttn → + x
-      → LayerNorm → CrossAttn(enc)  → + x
-      → LayerNorm → FeedForward     → + x
-    """
+    
     def __init__(self, d_model: int, n_heads: int, d_ff: int, dropout: float = 0.1):
         super().__init__()
         self.norm1 = nn.LayerNorm(d_model)
@@ -248,16 +193,7 @@ class DecoderLayer(nn.Module):
 # ENCODEUR COMPLET
 
 class AudioEncoder(nn.Module):
-    """
-    Encodeur audio complet.
-
-    Conv1D front-end : réduit la séquence T → T/2 et extrait
-    des features locales (un peu comme un CNN sur spectrogramme).
-    Deux convolutions de stride 1 avec GELU.
-
-    Puis N couches EncoderLayer empilées.
-    LayerNorm final pour stabiliser la sortie.
-    """
+    
     def __init__(self, config: ModelConfig):
         super().__init__()
         self.config = config
@@ -328,17 +264,7 @@ class AudioEncoder(nn.Module):
 # DÉCODEUR COMPLET
 
 class TextDecoder(nn.Module):
-    """
-    Décodeur texte complet.
-
-    Embedding : convertit les ids de tokens en vecteurs d_model.
-    Positional Encoding : ajoute l'information de position.
-    N couches DecoderLayer empilées.
-    Projection finale vers le vocabulaire.
-
-    Le masque causal est généré automatiquement pour bloquer
-    le futur lors de la self-attention.
-    """
+    
     def __init__(self, config: ModelConfig):
         super().__init__()
         self.config = config
@@ -372,26 +298,14 @@ class TextDecoder(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
-        """Initialisation Xavier pour stabiliser l'entraînement."""
+        
         for p in self.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
     def make_causal_mask(self, size: int, device: torch.device) -> torch.Tensor:
-        """
-        Masque causal triangulaire.
-        True = position bloquée (ne peut pas voir ce token).
-
-        Position 0 voit : [0]
-        Position 1 voit : [0, 1]
-        Position 2 voit : [0, 1, 2]
-        ...
-
-        Représenté comme matrice booléenne upper-triangular :
-        [[F, T, T],
-         [F, F, T],
-         [F, F, F]]
-        """
+        
+        
         mask = torch.triu(
             torch.ones(size, size, dtype=torch.bool, device=device),
             diagonal=1   # au-dessus de la diagonale = futur = bloqué
@@ -438,13 +352,7 @@ class TextDecoder(nn.Module):
 # MODÈLE COMPLET
 
 class WhisperLike(nn.Module):
-    """
-    Modèle complet Encoder-Decoder.
 
-    Deux modes :
-      - forward()  : entraînement (teacher forcing)
-      - generate() : inférence (génération autoregressive)
-    """
     def __init__(self, config: ModelConfig):
         super().__init__()
         self.config  = config
@@ -457,17 +365,7 @@ class WhisperLike(nn.Module):
         tgt_ids: torch.Tensor,
         mel_lengths: torch.Tensor = None
     ) -> torch.Tensor:
-        """
-        Passe forward pour l'entraînement.
 
-        Teacher forcing : on donne les vrais tokens en entrée du décodeur,
-        même si le modèle s'est trompé au pas précédent.
-        Plus rapide à entraîner, mais crée un décalage avec l'inférence.
-
-        tgt_ids en entrée  = [<bos>, tok1, tok2, ..., tokN]
-        logits en sortie   = [tok1,  tok2, ..., tokN, <eos>]
-        → décalé d'un pas : on prédit le prochain token à chaque position
-        """
         # Encoder l'audio
         enc_out, enc_mask = self.encoder(mel, mel_lengths)
 
@@ -485,17 +383,7 @@ class WhisperLike(nn.Module):
         beam_size: int = 1,      # 1 = greedy, >1 = beam search
         temperature: float = 1.0
     ) -> list:
-        """
-        Génération autoregressive token par token.
 
-        Mode greedy (beam_size=1) :
-          À chaque pas, prend le token le plus probable.
-          Rapide, moins précis.
-
-        Mode beam search (beam_size>1) :
-          Garde les N meilleures hypothèses en parallèle.
-          Plus lent, plus précis.
-        """
         self.eval()
         device = mel.device
         B      = mel.size(0)
@@ -509,7 +397,7 @@ class WhisperLike(nn.Module):
             return self._beam_search(enc_out, enc_mask, B, device, max_new_tokens, beam_size)
 
     def _greedy_decode(self, enc_out, enc_mask, B, device, max_new_tokens, temperature):
-        """Décodage greedy - prend le token le plus probable à chaque pas."""
+
         # Initialiser avec le token BOS
         generated = torch.full((B, 1), self.config.bos_id, dtype=torch.long, device=device)
         finished  = torch.zeros(B, dtype=torch.bool, device=device)
@@ -550,16 +438,7 @@ class WhisperLike(nn.Module):
         return results
 
     def _beam_search(self, enc_out, enc_mask, B, device, max_new_tokens, beam_size):
-        """
-        Beam search - garde les beam_size meilleures hypothèses.
 
-        À chaque pas :
-          1. Pour chaque hypothèse active, calculer prob de chaque token
-          2. Garder les beam_size meilleures combinaisons (hypothèse + nouveau token)
-          3. Répéter jusqu'à EOS ou max_new_tokens
-
-        Score = somme des log-probabilités (pour éviter l'underflow)
-        """
         results = []
 
         for b in range(B):
@@ -618,7 +497,7 @@ class WhisperLike(nn.Module):
         return results
 
     def count_parameters(self) -> dict:
-        """Compte les paramètres par composant."""
+
         enc_params = sum(p.numel() for p in self.encoder.parameters())
         dec_params = sum(p.numel() for p in self.decoder.parameters())
         total      = enc_params + dec_params

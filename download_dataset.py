@@ -33,7 +33,7 @@ MANIFEST_DIR.mkdir(parents=True, exist_ok=True)
 # 1. EXTRACTION DES .TAR
 
 def extract_all_tars():
-    """Extrait tous les .tar dans leur dossier respectif."""
+    
     tar_files = list(AUDIO_DIR.rglob("*.tar"))
 
     if not tar_files:
@@ -66,15 +66,7 @@ def extract_all_tars():
 # 2. INDEX DES FICHIERS MP3
 
 def build_audio_index():
-    """
-    Indexe tous les MP3 trouvés : {stem: chemin_complet}
-
-    Structure réelle détectée :
-      audio/fr/train/fr_train_0/fr_train_0/common_voice_fr_XXXXX.mp3
-      audio/fr/other/fr_other_0/fr_other_0/common_voice_fr_XXXXX.mp3
-    Le TSV contient juste : common_voice_fr_XXXXX.mp3
-    → on indexe par stem (nom sans extension)
-    """
+    
     print("\n Indexation des fichiers MP3...")
 
     index = {}
@@ -104,11 +96,7 @@ def build_audio_index():
 # 3. CONVERSION MP3 → WAV 16kHz
 
 def convert_to_wav(mp3_path, wav_path):
-    """
-    Convertit un MP3 en WAV 16kHz mono normalisé.
-    Utilise librosa qui gère les MP3 nativement sur Windows.
-    Retourne la durée en secondes.
-    """
+    
     import librosa
     import soundfile as sf
 
@@ -132,7 +120,7 @@ def convert_to_wav(mp3_path, wav_path):
 # 4. TRAITEMENT D'UN SPLIT
 
 def process_split(tsv_path, split_name, audio_index, max_hours=None):
-    """Lit le TSV, convertit les audios, génère le manifest."""
+    
     print(f"\n  Traitement '{split_name}'...")
 
     # Lire le TSV

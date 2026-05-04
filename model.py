@@ -67,26 +67,15 @@ class ConformerConvModule(nn.Module):
     """
     Le bloc de convolution au coeur du Conformer.
 
-    x → LayerNorm
-      → Pointwise Conv (d_model → 2*d_model)   expansion
-      → GLU (Gated Linear Unit)                 → d_model
-      → Depthwise Conv (kernel=31, groups=d_model)
-      → BatchNorm
-      → Swish (x * sigmoid(x))
-      → Pointwise Conv (d_model → d_model)      compression
-      → Dropout
-      → + x (résidu)
-
-    Pourquoi GLU ?
-      GLU(x) = A ⊙ sigmoid(B) où [A, B] = split(conv(x))
-      C'est une "porte" - certaines features passent, d'autres
-      sont filtrées. Plus expressif que ReLU/GELU simple.
-
-    Pourquoi Depthwise Conv ?
-      Conv standard : noyau [k, C_in, C_out] - mélange canaux
-      Depthwise Conv : noyau [k, 1, 1] × C - canal par canal
-      → 31 × 256 params au lieu de 31 × 256 × 256
-      → capture les patterns temporels locaux sans surcoût
+     -> LayerNorm
+      -> Pointwise Conv (d_model -> 2*d_model)
+      -> GLU (Gated Linear Unit)                
+      -> Depthwise Conv (kernel=31, groups=d_model)
+      -> BatchNorm
+      -> Swish (x * sigmoid(x))
+      -> Pointwise Conv (d_model -> d_model)      
+      -> Dropout
+      -> + x (résidu)
     """
     def __init__(self, d_model: int, kernel_size: int = 31, dropout: float = 0.1):
         super().__init__()
@@ -152,23 +141,7 @@ class ConformerConvModule(nn.Module):
 
 # BRIQUE 4 - COUCHE CONFORMER
 class ConformerLayer(nn.Module):
-    """
-    Une couche Conformer complète - remplace EncoderLayer.
 
-    Structure Macaron (deux demi-FeedForward autour de l'attention) :
-
-      x → FF(½ scale) → Self-Attn → ConvModule → FF(½ scale) → LayerNorm
-
-    Le "½ scale" signifie que la sortie du FeedForward est
-    multipliée par 0.5 avant d'être ajoutée au résidu.
-    Cela stabilise l'entraînement en réduisant l'amplitude
-    des mises à jour.
-
-    Comparé à l'EncoderLayer du Sprint 1 :
-      Sprint 1 : x → SelfAttn → FF
-      Sprint 2 : x → FF(½) → SelfAttn → Conv → FF(½) → Norm
-                              ↑ la conv capture le local
-    """
     def __init__(self, d_model: int, n_heads: int, d_ff: int,
                  conv_kernel: int = 31, dropout: float = 0.1):
         super().__init__()
@@ -275,12 +248,7 @@ class DecoderLayer(nn.Module):
 
 # ENCODEUR CONFORMER COMPLET
 class AudioEncoder(nn.Module):
-    """
-    Encodeur audio avec couches Conformer.
 
-    Front-end Conv1D identique au Sprint 1 (subsampling T→T/2).
-    Les N EncoderLayer sont remplacées par N ConformerLayer.
-    """
     def __init__(self, config: ModelConfig):
         super().__init__()
         self.config = config
@@ -413,21 +381,7 @@ class WhisperLike(nn.Module):
     # Beam Search amélioré
     def _beam_search(self, enc_out, enc_mask, B, device,
                      max_new_tokens, beam_size, length_penalty=0.6):
-        """
-        Beam Search avec length penalty.
 
-        Sans length penalty, le score est la somme des log-probs.
-        Chaque token ajouté est négatif → les séquences courtes
-        ont de meilleurs scores → le modèle génère trop peu de mots.
-
-        Length penalty : score_normalisé = score / (longueur ^ α)
-        α = 0.6 est la valeur standard (Google, Whisper).
-        α = 0 → pas de penalty (greedy equivalent)
-        α = 1 → division par la longueur exacte
-
-        À chaque pas on garde les beam_size meilleures hypothèses,
-        on les développe toutes, et on refiltre les beam_size meilleures.
-        """
         results = []
 
         for b in range(B):
@@ -475,7 +429,7 @@ class WhisperLike(nn.Module):
                 all_candidates.sort(key=normalized_score, reverse=True)
                 beams = all_candidates[:beam_size]
 
-                # Si tous ont généré EOS → terminé
+                # Si tous ont généré EOS -> terminé
                 if all(s[-1] == self.config.eos_id for _, s in beams):
                     completed.extend(beams)
                     beams = []

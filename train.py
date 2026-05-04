@@ -63,17 +63,7 @@ class TrainConfig:
 
 # SCHEDULER : WARMUP + COSINE DECAY
 class WarmupCosineScheduler:
-    """
-    Learning rate schedule en deux phases :
-
-    Phase 1 - Warmup linéaire (0 → max_lr sur warmup_steps)
-      Le modèle démarre avec un LR très bas pour stabiliser
-      les premiers updates. Monter trop vite → gradients explosent.
-
-    Phase 2 - Décroissance cosinus (max_lr → ~0)
-      Décroissance douce qui permet de converger finement
-      vers un minimum sans osciller.
-    """
+    
     def __init__(self, optimizer, warmup_steps: int, total_steps: int):
         self.optimizer    = optimizer
         self.warmup_steps = warmup_steps
@@ -109,20 +99,7 @@ def compute_loss(
     targets: torch.Tensor,
     pad_id: int,
 ) -> torch.Tensor:
-    """
-    CrossEntropyLoss position par position.
-
-    logits  : [B, U, vocab_size] - prédictions du modèle
-    targets : [B, U]             - vrais tokens (tgt_out)
-    pad_id  : int                - positions à ignorer
-
-    On aplatit tout en [B*U, vocab] et [B*U] pour
-    que CrossEntropyLoss puisse calculer en une passe.
-
-    ignore_index=pad_id : les positions padding ne contribuent
-    pas à la loss - sinon le modèle serait pénalisé pour avoir
-    prédit n'importe quoi sur des positions vides.
-    """
+    
     B, U, V = logits.shape
 
     # Aplatir [B, U, V] → [B*U, V] et [B, U] → [B*U]
@@ -149,13 +126,7 @@ def evaluate(
     cfg: TrainConfig,
     n_batches: int = 20,    # limiter pour aller vite
 ) -> tuple:
-    """
-    Évalue le modèle sur le val set.
-    Calcule la loss ET le WER (Word Error Rate).
-
-    Pour le WER, on génère le texte en mode autorégressif
-    (pas de teacher forcing) - c'est comme en production.
-    """
+    
     model.eval()
     total_loss = 0.0
     n_loss     = 0
@@ -415,7 +386,7 @@ if __name__ == "__main__":
         (cfg.tokenizer_path,  "tokenizer"),
     ]:
         if not Path(path).exists():
-            missing.append(f"  ❌ {name} : {path}")
+            missing.append(f"  erreur {name} : {path}")
 
     if missing:
         print("Fichiers manquants :")

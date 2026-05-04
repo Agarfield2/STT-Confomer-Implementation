@@ -25,17 +25,7 @@ MIN_AUDIO_S  = 0.5    # secondes min
 
 # DATASET PRINCIPAL
 class SpeechDataset(Dataset):
-    """
-    Dataset qui charge les paires (audio, texte) depuis un manifest JSON.
 
-    Chaque ligne du manifest :
-      {"audio_filepath": "...", "text": "bonjour", "duration": 3.0, ...}
-
-    Ce que retourne __getitem__ :
-      mel     : Tensor [T, 80]    - log-mel spectrogram normalisé
-      tgt_in  : Tensor [U+1]      - tokens avec <bos> au début
-      tgt_out : Tensor [U+1]      - tokens avec <eos> à la fin
-    """
 
     def __init__(
         self,
@@ -133,7 +123,7 @@ class SpeechDataset(Dataset):
         return mel, tgt_in, tgt_out
 
     def _load_audio(self, audio_path: str) -> torch.Tensor:
-        """Charge un fichier WAV et retourne le log-mel spectrogram normalisé."""
+        
 
         # Charger le WAV avec soundfile (pas de dépendance torchcodec)
         import soundfile as sf
@@ -176,24 +166,7 @@ class SpeechDataset(Dataset):
 
 # COLLATE - PADDING DYNAMIQUE
 def collate_fn(batch, pad_id: int = 0):
-    """
-    Regroupe les samples en batch avec padding dynamique.
 
-    Problème : chaque sample a une longueur différente.
-    Solution : on complète avec des zéros (mel) ou pad_id (tokens)
-    jusqu'à la longueur maximale du batch.
-
-    Retourne aussi les longueurs réelles pour ignorer le padding
-    dans la loss et les métriques.
-
-    Entrée  : liste de (mel, tgt_in, tgt_out)
-    Sortie  :
-      mel_padded    [B, T_max, n_mels]
-      tgt_in_padded [B, U_max]
-      tgt_out_padded[B, U_max]
-      mel_lengths   [B]   - longueurs réelles de mel
-      tgt_lengths   [B]   - longueurs réelles de tgt
-    """
     mels, tgt_ins, tgt_outs = zip(*batch)
 
     # Longueurs réelles
@@ -221,7 +194,7 @@ def collate_fn(batch, pad_id: int = 0):
 
 
 def make_collate_fn(pad_id: int):
-    """Factory pour passer le pad_id au collate_fn."""
+    
     def _collate(batch):
         return collate_fn(batch, pad_id=pad_id)
     return _collate
@@ -235,7 +208,7 @@ def get_dataloaders(
     batch_size: int = 8,
     num_workers: int = 2,
 ) -> Tuple[DataLoader, DataLoader]:
-    """Crée les DataLoaders train et validation."""
+    
 
     print("Chargement train dataset...")
     train_ds = SpeechDataset(
