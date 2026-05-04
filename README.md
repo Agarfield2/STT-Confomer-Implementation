@@ -113,14 +113,6 @@ tensorboard --logdir ./logs/tensorboard
 watch -n 2 nvidia-smi
 ```
 
-**Résultats attendus par époque :**
-```
-Époque  5 : WER ~40-50%  (début d'apprentissage)
-Époque 15 : WER ~25-30%  (modèle viable)
-Époque 30 : WER ~15-20%  (bon modèle)
-Époque 50 : WER ~10-15%  (objectif)
-```
-
 **Reprendre un entraînement interrompu :**
 ```bash
 # Le script reprend automatiquement depuis le dernier checkpoint
